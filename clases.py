@@ -533,8 +533,7 @@ songs = Conditions(song_folder)
 
 
 # Вызовы
-songs.run()
-songs.txt_file()
+
 
 
 
