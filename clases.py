@@ -17,6 +17,9 @@ class Folder:
         response = os.listdir(self.folder)
         return response
 
+    def copy_file(self):
+        """Копирует фалы в папку"""
+
 class Songs(Folder):
     def __init__(self, song_folder):
         """Методы работы с песнями"""
@@ -48,7 +51,7 @@ class Songs(Folder):
         artist_name = artist_name[2].lower()
         artist_name = ''.join(artist_name.split())
         #КОСТЫЛЬ
-        if artist_name == 'gorkypark':
+        if artist_name in ['gorkypark', 'zivert']:
             return True
         else:
             return bool(pattern.match(artist_name))
@@ -96,17 +99,7 @@ class Songs(Folder):
 
         return None
 
-    def rus_song(self) -> list:
-        """"Формирует список id российских песен"""
-        all_songs = self.all_songs_dict()
-        response = []
-
-        for i in all_songs:
-            if self.rus_name_song(all_songs[i]) == True:
-                response.append(i)
-        return response
-
-    def eng_song(self) -> list:
+    
         """Формирует список из id зарубежных песен"""
         all_songs = self.all_songs_dict()
         response = []
@@ -128,52 +121,6 @@ class Songs(Folder):
         return response
 
 
-
-
-    def bpm_eng_song(self) -> dict:
-        """Формирует словарь с bpm зарубежных песен"""
-        eng_song_list = self.eng_song()
-        all_song = self.all_songs_dict()
-        response = {}
-        for i in eng_song_list:
-            all_name = all_song[i]
-            end_position = all_name.find('-')
-            bpm = all_name[0:end_position]
-            response[int(bpm)] = i
-        
-        return response
-
-    def bpm_rus_song(self) -> dict:
-        """Формирует словарь с bpm российских песен"""
-        rus_song_list = self.rus_song()
-        all_song = self.all_songs_dict()
-        response = {}
-        for i in rus_song_list:
-            all_name = all_song[i]
-            end_position = all_name.find('-')
-            bpm = all_name[0:end_position]
-            response[int(bpm)] = i 
-        return response
-
-    def bpm_dict(self):
-        """"Фомирует словарь id:bpm """
-        all_song = self.all_songs_dict()
-
-        response = {}
-
-        for i in all_song.keys():
-            if all_song[i] != None:
-                response[i] = all_song[i]['bpm']
-            else:
-                pass
-
-        print(response)
-        pass
-
-
-
-
-
     # Опсионально словарь по тональностям
     def ton_eng_song(self):
         """Формирует словарь тональностей зарубежных песен"""
@@ -183,167 +130,400 @@ class Songs(Folder):
         """Формирует словарь тональностей российских песен"""
         pass
 
+
 class Conditions(Songs):
     def __init__(self, song_folder):
         """"Проверяет условия для формирования ПЛ"""
         super().__init__(song_folder)
+        self.song_id = []
         pass
 
-    # Базовые вычисления bpm
-    def scope_bpm(self, bpm:int) -> dict:
-        """Вычисляет bpm от предыдущей песни"""
-        response = {}
-        # добавить в словарь исходный би пи ЭМ
-        # Добавить в словарь +/- бипиэм
-        # Добавить умноженный диапазон БИ ПИ ЭМ!
-        # Добавить разделенный диапазон БИ ПИ ЭМ
-
-        # Вернуть словарь!
-        
-        pass
-        
-    def bpm_examination(self, lang_song: dict, target_bpm: int) -> list:
-        """Возвращает список ID песен удовлетворяющих BPM"""
-        
-        pass
-
-
-
-
-    def magic_rotator(self, lang, target_bpm) -> int:
-        """Находит только лучшие песни"""
-        
+    # Cкрипты поиска
+    def bpm_target_serch(self, lang_song:dict, target_bpm) -> list:
+        """Возвращает список ID песен с целевым BPM"""
         # Полный список песен
         all_songs = self.all_songs_dict()
-
-        # список id целевых песен песен
-        lang_song = None #Целевой словарь
-
-        # Диапазон поиска
-        bpm_range = []
-
-        if lang == 'ru':
-            lang_song = self.lang_songs('ru')
-        elif lang == 'eng':
-            lang_song = self.lang_song('eng')
-        else:
-            print ('!!!!!!!!Что-то пошло не так в методе MAGIC_ROTATOR, блоке определения языковой подборки!!!!!!!!!') 
-
-        
-        # Собираем список песен с целевым BPM
-        target_bpm_song = []
+        response = []
         for i in lang_song:
             bpm_song = all_songs[i]['bpm']
             if bpm_song == target_bpm:
-                target_bpm_song.append(i)
+                response.append(i)
             else:
                 pass
         
-        #Сепаратор 1
+        return response
+
+    def bpm_range_serch(self, lang_song:dict, bpm_range:list) -> list:
+        """"Производит поиск ID композиций которые попадают в диапазон bpm_range"""
+        all_songs = self.all_songs_dict()
+        response = []
+
+        for i in lang_song:
+            bpm_song = all_songs[i]['bpm']
+            if bpm_range[0] <= bpm_song <= bpm_range[-1]:
+                response.append(i)
+            else:
+                pass
+        return response
+
+    def bpm_nearest_song(self, lang_song:dict, target_bpm:int) -> int:
+        """Ищет ближайшую песню c близким к целевому BPM"""
+        pass
+
+    # Вычисления BPM
+    def bpm_range_1(self, target_bpm:int) -> list:
+        """Первый диапазон BPM +/-2 от входящего"""
+        response = []
+        if target_bpm <= 0:
+            print ('BPM не может быть меньше или равен 0')
+            target_bpm = 1
+            return [1, target_bpm, 1]
+        elif target_bpm > 0:
+            a = target_bpm + 2
+            b = target_bpm - 2
+            response.append(1) if b < 0 else b
+            response.append(target_bpm)
+            response.append(a)
+        return response
+
+    def bpm_range_2(self, target_bpm:int) -> list:
+        """"Целевой диапазон *2 +/- 2"""
+        new_target_bpm = target_bpm *2
+        response = []
+        if target_bpm <= 0:
+            print ('BPM не может быть меньше или равен 0')
+            target_bpm = 1
+        else:
+            pass
+
+        if new_target_bpm > 0:
+            a = new_target_bpm + 2
+            b = new_target_bpm - 2
+            response.append(1) if b < 0 else b
+            response.append(target_bpm)
+            response.append(a)
+        return response
+
+        
+
+
+        pass
+    
+    def bpm_range_3(self, target_bpm:int) -> list:
+        """"Целевой диапазон //2 +/- 2"""
+        
+        response = []
+        
+        if target_bpm <= 0:
+            print ('BPM не может быть меньше или равен 0')
+            target_bpm = 1
+        else:
+            pass
+
+        new_target_bpm = target_bpm // 2
+
+        if new_target_bpm  <= 1:
+            new_target_bpm = 1
+        else:
+            pass
+
+        if new_target_bpm > 0:
+            a = new_target_bpm + 2
+            b = new_target_bpm - 2
+            response.append(b) if b > 0 else 1
+            response.append(new_target_bpm)
+            response.append(a)
+        return response
+        
+    def random_bpm(self, target_bpm) -> int:
+        """"Рандомизирует целевой BPM для поиска"""
+        action = [1,2,3,4]
+        r = randint(0, len(action) - 1)
+
+        if action[r] == 1:
+            target_bpm = target_bpm + 5
+            return target_bpm
+        elif action[r] == 2:
+            target_bpm = target_bpm - 5
+            return target_bpm
+        elif action[r] == 3:
+            target_bpm = target_bpm * 2
+            return target_bpm
+        elif action[r] == 4:
+            target_bpm = target_bpm // 2
+            return target_bpm
+        pass
+    
+    # Алгоритм ротатора
+    def magic_rotator(self, lang, target_bpm) -> int:
+        """Находит только лучшие песни"""
+        
+        # список id целевых песен песен
+        lang_song = None #Целевой словарь
+
+        # Формируем целевой словарь
+        if lang == 'ru':
+            lang_song = self.lang_songs('ru')
+        elif lang == 'eng':
+            lang_song = self.lang_songs('eng')
+        else:
+            print ('!!!!!!!!Что-то пошло не так в методе MAGIC_ROTATOR, блоке определения языковой подборки!!!!!!!!!') 
+
+        # Собираем список песен с целевым BPM
+        target_bpm_song = self.bpm_target_serch(lang_song, target_bpm)
+        
+        
+        #Сепаратор 1 (если есть песни с целевым bpm)
         if len(target_bpm_song) > 0:
             return target_bpm_song[randint(0,len(target_bpm_song)-1)]
+        
+        # Сепаратор 2 (если нет песен с целевым bpm)
         elif len(target_bpm_song) == 0:
-            # Расширяем диапазон +/-2
-            if target_bpm > 0:
-                bpm_range.clear()
-                bpm_range.append(target_bpm + 2)
-                bpm_range.append(target_bpm - 2)
-                print(bpm_range)
+            bpm_range = self.bpm_range_1(target_bpm)
+            target_bpm_song = self.bpm_range_serch(lang_song, bpm_range)
+            if len(target_bpm_song) > 0:
+                return target_bpm_song[randint(0,len(target_bpm_song)-1)]
+            
+            # Сепаратор 3 (если нет песен с целевым +/- 2 bpm)
             else:
-                print('BPM Не может быть равен 0! Измените начальный BPM')
-                return None
-            
-            
-
+                bpm_range = self.bpm_range_2(target_bpm)
+                target_bpm_song = self.bpm_range_serch(lang_song, bpm_range)
+                if len(target_bpm_song) > 0:
+                    return target_bpm_song[randint(0,len(target_bpm_song)-1)]
+                
+                # Сепаратор 4 (если нет песен с целевым *2 +/- 2) 
+                else:
+                    bpm_range = self.bpm_range_3(target_bpm)
+                    target_bpm_song = self.bpm_range_serch(lang_song, bpm_range)
+                    if len(target_bpm_song) > 0:
+                        return target_bpm_song[randint(0,len(target_bpm_song)-1)]
+                    else:
+                        # КОСТЫЛЬ! Дописать алгоритм поиска ближайшей по BPM песни
+                        return None
         else:
             print ('В методе MAGIC_ROTATOR произошла ошибка! Блок изменения диапазона BPM')
-        
-        #
-        # 
-        # return target_bpm_song
-    
-
-
-        
-        #return lang_song
-
-
-
-            
-            
-            
-            # Сепаратор 1 - собираем id песен которые удовлетворяют целевому бипиэм
-            # Если песн нет расширяем диапазон +/-2
-            # Сепараор 2 - собираем id песен которые удволетворяют джиапазону
-            # если песн нет меняем диапазон - целевой *2 +/-2
-            # Сепаратор 3
-            # Если песн нет меняем диапазон от целевого //2 +/-2
-            # Если песн нет возвращзаем строку - "Песен с заданными параметрами нет"
-
         pass
+     
+    def search_songs(self,lang, bpm) -> int:
+        """Добавляет песни в плейлист"""
+        flag = 10
+        song = self.magic_rotator(lang, bpm)
+        if song not in self.song_id:
+            return song
+        else:
+            while song in self.song_id:
+                print(f'Мы в вечном цикле. Флаг {flag}')
+                song = self.magic_rotator(lang, bpm)
+                flag -= 1
+                if flag <= 0:
+                    print('Выходим из цикла по флагу')
+                    break
+        
+        return None
+
+    def serch_end_bpm(self):
+        """Ищет ближайший BPM"""
+        for i in reversed(self.song_id):
+            if isinstance(i, int):
+                return self.all_songs_dict()[i]['bpm']
+            else:
+                print('Поиск последнего BPM прошел неудачно. Вернул случайное значение 90-120')
+                return randint(90,130)
 
 
+    # Правила плейлиста
     def song_1(self) -> int:
         """Правила подбора первой песни"""
-        #найти песню с нужным bpm и страной
         lang = 'ru'
         bpm = first_bpm
-
         song = self.magic_rotator(lang, bpm)
-
-        return song
-
-        
-
-
-
-        
-
-    def song_2(self) -> int:
-        pass
-
-    def song_3(self) -> int:
-        pass
-
-    def song_4(self) -> int:
-        pass
-
-    def song_5(self) -> int:
-        pass
-
-    def song_6(self) -> int:
-        pass
-
-    def song_7(self) -> int:
-        pass
-
-    def song_8(self) -> int:
-        pass
-
-    def song_9(self) -> int:
-        pass
-
-    def song_10(self) -> int:
-        pass
-
-    def song_11(self) -> int:
-        pass
-
-    def song_12(self) -> int:
+        self.song_id.append(song)
+        print(f'Первая песня добавлена {song}')
+        print(self.song_id)
         pass
     
+    def song_2(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Вторая песня добавлена {song}')
+        else:
+           print ('Песня не найдена')
+           bpm = self.serch_end_bpm()
+           song = self.search_songs(lang, bpm)
+           self.song_id.append(song)
+           print(f'Вторая песня добавлена {song} использвоанием поиска BPM')
 
-class Playlist(Conditions):
-    def __init__(self):
-        """Подбирает песни и формирует текстовый файл"""
-        super().__init__(song_folder)
-        pass
+    def song_3(self) -> int:
+        lang = 'eng'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Третья песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Третья песня добавлена {song} с использвоанием поиска BPM')
 
-    def get_playlist(self, file_name):
-        """Формирует плейлист обращаясь к классу условия"""
-        pass
+    def song_4(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Четвертая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Четвертая песня добавлена {song} с использвоанием поиска BPM')
+ 
+    def song_5(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Пятая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Пятая песня добавлена {song} с использвоанием поиска BPM')
 
+    def song_6(self) -> int:
+        lang = 'eng'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Шестая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Шестая песня добавлена {song} с использвоанием поиска BPM')
 
+    def song_7(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Седьмая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Седьмая песня добавлена {song} с использвоанием поиска BPM')
+
+    def song_8(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Восьмая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Восьмая песня добавлена {song} с использвоанием поиска BPM')
+
+    def song_9(self) -> int:
+        lang = 'eng'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Девятая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Девятая песня добавлена {song} с использвоанием поиска BPM')
+ 
+    def song_10(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Десятая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Десятая песня добавлена {song} с использвоанием поиска BPM')
+
+    def song_11(self) -> int:
+        lang = 'ru'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Одинадцатая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'Одинадцатая песня добавлена {song} с использвоанием поиска BPM')
+
+    def song_12(self) -> int:
+        lang = 'eng'
+        if isinstance(self.song_id[-1], int):
+            bpm = self.random_bpm(self.all_songs_dict()[self.song_id[-1]]['bpm'])
+            song = self.search_songs(lang, bpm)
+            self.song_id.append(song)
+            print(f'Двенадцатая песня добавлена {song}')
+        else:
+         print ('Песня не найдена')
+         bpm = self.serch_end_bpm()
+         song = self.search_songs(lang, bpm)
+         self.song_id.append(song)
+         print(f'ДВенадцатая песня добавлена {song} с использвоанием поиска BPM')
+
+   
+   # Сборка плейлиста
+    def run(self):
+        """Собирает ПЛЕЙЛИСТ"""
+        #self.song_id.clear()
+        self.song_1()
+        self.song_2()
+        self.song_3()
+        self.song_4()
+        self.song_5()
+        self.song_6()
+        self.song_7()
+        self.song_8()
+        self.song_9()
+        self.song_10()
+        self.song_11()
+        self.song_12()
+        print(self.song_id)
+
+    def txt_file(self):
+        """Преобразовывает ID в название песен"""
+        all_songs = self.all_songs_dict()
+        response = []
+        for index, item in enumerate(self.song_id, start=1):
+            if item != None:
+                print(f"{index} - {all_songs[item]['all_name']}")
+            else:
+                print(f"{index} - Песня не найдена")
 
 
 # Экземпляры
@@ -351,14 +531,10 @@ folder = Folder(song_folder)
 song = Songs(song_folder)
 songs = Conditions(song_folder)
 
+
 # Вызовы
-#print (song.rus_song())
-#print (song.eng_song())
-#print(song.bpm_eng_song())
-#print(song.bpm_rus_song())
-#print(song.bpm_eng_song().keys())
-#print(song.all_songs_dict())
-#song.bpm_dict()
-#print (song.rus_song())
-print (songs.song_1())
+songs.run()
+songs.txt_file()
+
+
 
